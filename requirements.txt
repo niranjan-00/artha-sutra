@@ -10,3 +10,4 @@ gunicorn>=22,<24; platform_system != "Windows"
 pytest>=8,<9
 
 reportlab>=4.2,<5.0
+sqlalchemy-libsql==0.2.0; platform_system != "Windows"
