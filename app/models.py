@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     is_demo = db.Column(db.Boolean, nullable=False, default=False)
     theme = db.Column(db.String(12), nullable=False, default="light", server_default="light")
+    language = db.Column(db.String(12), nullable=False, default="en", server_default="en")
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
     business = db.relationship("Business", back_populates="owner", uselist=False, cascade="all, delete-orphan")
 
@@ -204,3 +205,96 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, nullable=False, default=False, index=True)
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
     business = db.relationship("Business", back_populates="notifications")
+
+
+class Product(db.Model):
+    """Inventory item. Stock is never stored here: it is the sum of StockMovement rows."""
+
+    __tablename__ = "products"
+    __table_args__ = (db.UniqueConstraint("business_id", "sku", name="uq_products_business_sku"),)
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True)
+    supplier_id = db.Column(db.Integer, db.ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True, index=True)
+    name = db.Column(db.String(160), nullable=False, index=True)
+    sku = db.Column(db.String(60))
+    category = db.Column(db.String(80), nullable=False, default="General")
+    unit = db.Column(db.String(20), nullable=False, default="units")
+    purchase_price_paise = db.Column(db.BigInteger, nullable=False, default=0)
+    selling_price_paise = db.Column(db.BigInteger, nullable=False, default=0)
+    min_stock = db.Column(db.Integer, nullable=False, default=0)
+    lead_time_days = db.Column(db.Integer, nullable=True)
+    tracks_expiry = db.Column(db.Boolean, nullable=False, default=False)
+    status = db.Column(db.String(20), nullable=False, default="active", index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow)
+    supplier = db.relationship("Supplier")
+    batches = db.relationship("ProductBatch", back_populates="product", cascade="all, delete-orphan")
+    movements = db.relationship("StockMovement", back_populates="product", cascade="all, delete-orphan")
+
+
+class ProductBatch(db.Model):
+    __tablename__ = "product_batches"
+    __table_args__ = (db.UniqueConstraint("product_id", "batch_number", "expiry_date", name="uq_batch_identity"),)
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    batch_number = db.Column(db.String(60), nullable=False, default="UNBATCHED")
+    expiry_date = db.Column(db.Date, nullable=True, index=True)
+    unit_cost_paise = db.Column(db.BigInteger, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+    product = db.relationship("Product", back_populates="batches")
+
+
+class StockMovement(db.Model):
+    """Signed quantity ledger. movement_type: opening, purchase, sale, adjustment, writeoff."""
+
+    __tablename__ = "stock_movements"
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    batch_id = db.Column(db.Integer, db.ForeignKey("product_batches.id", ondelete="SET NULL"), nullable=True, index=True)
+    movement_type = db.Column(db.String(20), nullable=False, index=True)
+    quantity_change = db.Column(db.Integer, nullable=False)
+    unit_cost_paise = db.Column(db.BigInteger, nullable=True)
+    movement_date = db.Column(db.Date, nullable=False, index=True)
+    notes = db.Column(db.String(300))
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+    product = db.relationship("Product", back_populates="movements")
+    batch = db.relationship("ProductBatch")
+
+
+class StockAlert(db.Model):
+    """One row per distinct inventory condition. A changed level creates a new row; unchanged conditions do not repeat."""
+
+    __tablename__ = "stock_alerts"
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    batch_id = db.Column(db.Integer, db.ForeignKey("product_batches.id", ondelete="CASCADE"), nullable=True, index=True)
+    alert_type = db.Column(db.String(20), nullable=False)  # low_stock | expiry
+    level = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(160), nullable=False)
+    message = db.Column(db.String(500), nullable=False)
+    is_acknowledged = db.Column(db.Boolean, nullable=False, default=False)
+    acknowledged_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+    resolved_at = db.Column(db.DateTime, nullable=True, index=True)
+    product = db.relationship("Product")
+    batch = db.relationship("ProductBatch")
+
+
+class GstRecord(db.Model):
+    """Owner-entered GST obligation with an explicit deadline source."""
+    __tablename__ = "gst_records"
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True)
+    filing_period = db.Column(db.String(40), nullable=False)
+    record_type = db.Column(db.String(40), nullable=False, default="GST filing")
+    due_date = db.Column(db.Date, nullable=True, index=True)
+    amount_paise = db.Column(db.BigInteger, nullable=False, default=0)
+    status = db.Column(db.String(20), nullable=False, default="upcoming")
+    reference = db.Column(db.String(120))
+    notes = db.Column(db.String(500))
+    deadline_source = db.Column(db.String(200), nullable=False, default="Owner-entered deadline; verify against the applicable official GST notice.")
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)

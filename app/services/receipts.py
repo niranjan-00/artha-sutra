@@ -76,3 +76,33 @@ def build_payment_receipt(*, business, payment, invoice, party) -> bytes:
     pdf.drawRightString(width - 52, 48, f"Receipt ID {payment.id}")
     pdf.save()
     return buffer.getvalue()
+
+
+def build_transaction_receipt(*, business, transaction) -> bytes:
+    """Generate a truthful PDF receipt/voucher from one settled ledger transaction."""
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4, pageCompression=0)
+    width, height = A4
+    title = "SALES RECEIPT" if transaction.transaction_type == "income" else "TRANSACTION VOUCHER"
+    pdf.setTitle(f"{title} {transaction.id}")
+    pdf.setAuthor(_pdf_text(business.name))
+    pdf.setFillColorRGB(0.25, 0.21, 0.38)
+    pdf.setFont("Helvetica-Bold", 22)
+    pdf.drawString(52, height - 65, _pdf_text(business.name))
+    pdf.setFillColorRGB(0.38, 0.33, 0.54)
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(52, height - 100, title)
+    pdf.setStrokeColorRGB(0.86, 0.84, 0.89)
+    pdf.line(52, height - 114, width - 52, height - 114)
+    party = transaction.customer.name if transaction.customer else transaction.supplier.name if transaction.supplier else "Unassigned"
+    details = [("Receipt number", f"TX-{transaction.id}"), ("Date", transaction.transaction_date.isoformat()), ("Description", transaction.description), ("Party", party), ("Category", transaction.category), ("Payment method", transaction.payment_method), ("Status", transaction.payment_status.title()), ("Reference", transaction.reference or "—")]
+    y = height - 150
+    for label, value in details:
+        pdf.setFillColorRGB(0.48, 0.47, 0.51); pdf.setFont("Helvetica", 10); pdf.drawString(54, y, _pdf_text(label))
+        pdf.setFillColorRGB(0.15, 0.16, 0.20); pdf.setFont("Helvetica-Bold", 11); pdf.drawString(205, y, _pdf_text(value)[:90]); y -= 27
+    pdf.setFillColorRGB(0.95, 0.94, 0.97); pdf.roundRect(52, y - 14, width - 104, 62, 10, fill=1, stroke=0)
+    pdf.setFillColorRGB(0.42, 0.39, 0.48); pdf.setFont("Helvetica", 10); pdf.drawString(68, y + 25, "AMOUNT")
+    pdf.setFillColorRGB(0.18, 0.16, 0.24); pdf.setFont("Helvetica-Bold", 19); pdf.drawString(68, y - 1, _inr(transaction.amount_paise))
+    pdf.setFillColorRGB(0.50, 0.49, 0.53); pdf.setFont("Helvetica", 9); pdf.drawString(52, 48, "Generated from a recorded ledger transaction. This document does not confirm external delivery.")
+    pdf.drawRightString(width - 52, 48, f"Receipt ID TX-{transaction.id}")
+    pdf.save(); return buffer.getvalue()

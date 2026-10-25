@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Stock alerts — Artha Sutra{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> INVENTORY</div><h1>Stock alerts</h1><p>Each condition is alerted once. You are alerted again only if it gets worse or changes. Email and WhatsApp delivery are not configured.</p></div><a class="btn btn-outline-soft btn-sm" href="{{ url_for('inventory.expiry') }}">Expiry monitor</a></div>
+<section class="table-shell"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Alert</th><th>Details</th><th>Status</th><th></th></tr></thead><tbody>
+{% for a in alerts %}{% set item = low.get(a.product_id) if a.alert_type == 'low_stock' else none %}<tr>
+<td><strong>{{ a.title }}</strong><div class="table-muted">{{ a.created_at.strftime('%d %b %Y') }}</div></td>
+<td><a href="{{ url_for('inventory.product_detail', product_id=a.product_id) }}">{{ a.message }}</a>{% if item %}<div class="table-muted">Minimum {{ item.product.min_stock }} · {% if item.days_left is not none %}about {{ '%.1f'|format(item.days_left) }} days left{% else %}not enough sales history to predict{% endif %}{% if item.reorder_qty %} · suggested reorder {{ item.reorder_qty }} {{ item.product.unit }}{% endif %}{% if item.product.supplier %} · {{ item.product.supplier.name }}{% endif %}</div>{% endif %}</td>
+<td>{% if a.is_acknowledged %}<span class="badge text-bg-secondary">Acknowledged</span>{% else %}<span class="badge text-bg-warning">Open</span>{% endif %}</td>
+<td class="text-end">{% if not a.is_acknowledged %}<form method="post" action="{{ url_for('inventory.acknowledge_alert', alert_id=a.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-soft btn-sm" type="submit">Acknowledge</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon"><i class="bi bi-check2-circle"></i></div><h3>No active alerts</h3><p>Alerts appear when stock falls below a product's minimum or a batch nears expiry.</p></div></td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

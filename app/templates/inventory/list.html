@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Products &amp; stock — Artha Sutra{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> INVENTORY</div><h1>Products &amp; stock</h1><p>Stock is calculated from recorded stock movements, never typed in as a total.</p></div><div class="d-flex gap-2"><a class="btn btn-outline-soft btn-sm" href="{{ url_for('inventory.alerts') }}"><i class="bi bi-exclamation-triangle"></i> Alerts{% if open_alerts %} ({{ open_alerts }}){% endif %}</a><a class="btn btn-ink btn-sm" href="{{ url_for('inventory.product_new') }}"><i class="bi bi-plus-lg"></i> Add product</a></div></div>
+<section class="table-shell">
+<form class="filters-row p-3 mb-0" method="get"><input class="form-control search-control" name="q" type="search" value="{{ search }}" placeholder="Search name or SKU" aria-label="Search products"><select class="form-select" name="status" aria-label="Status"><option value="active" {% if status=='active' %}selected{% endif %}>Active</option><option value="inactive" {% if status=='inactive' %}selected{% endif %}>Inactive</option><option value="all" {% if status=='all' %}selected{% endif %}>All</option></select><label class="small d-flex align-items-center gap-1"><input type="checkbox" name="low" value="1" {% if only_low %}checked{% endif %}> Low stock only</label><button class="btn btn-outline-soft btn-sm" type="submit">Filter</button></form>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Product</th><th>Category</th><th class="text-end">In stock</th><th class="text-end">Minimum</th><th>Stock lasts</th><th class="text-end">Selling price</th></tr></thead><tbody>
+{% for r in rows %}{% set p = r.product %}<tr>
+<td><a href="{{ url_for('inventory.product_detail', product_id=p.id) }}"><strong>{{ p.name }}</strong></a><div class="table-muted">{{ p.sku or 'No SKU' }}{% if p.status != 'active' %} · inactive{% endif %}</div></td>
+<td>{{ p.category }}</td>
+<td class="text-end"><strong>{{ r.stock }}</strong> {{ p.unit }}{% if r.level == 'out' %} <span class="badge text-bg-danger">Out</span>{% elif r.level == 'critical' %} <span class="badge text-bg-danger">Critical</span>{% elif r.level == 'low' %} <span class="badge text-bg-warning">Low</span>{% endif %}</td>
+<td class="text-end">{{ p.min_stock }}</td>
+<td>{% if r.days_left is not none %}about {{ '%.1f'|format(r.days_left) }} days{% if r.demand.irregular %} <span class="table-muted">(irregular demand)</span>{% endif %}{% else %}<span class="table-muted">Not enough sales history</span>{% endif %}</td>
+<td class="text-end">{{ p.selling_price_paise|money }}</td></tr>
+{% else %}<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon"><i class="bi bi-boxes"></i></div><h3>No products found</h3><p>Add a product, then record opening stock so quantities and alerts reflect real records.</p></div></td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

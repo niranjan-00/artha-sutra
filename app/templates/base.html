@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="{% if current_user.is_authenticated and current_user.theme == 'dark' %}dark{% else %}light{% endif %}">
+<html lang="{{ current_user.language if current_user.is_authenticated else 'en' }}" data-theme="{% if current_user.is_authenticated and current_user.theme == 'dark' %}dark{% else %}light{% endif %}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,20 +23,31 @@
       </a>
       {% if current_user.is_demo %}<div class="demo-rail"><span class="demo-dot"></span> DEMO WORKSPACE</div>{% endif %}
       <nav class="side-nav">
-        <span class="nav-caption">WORKSPACE</span>
+        <span class="nav-caption">REPORTS &amp; LEDGER</span>
         <a class="side-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}"><i class="bi bi-grid-1x2"></i><span>Overview</span></a>
         <a class="side-link {% if request.endpoint and request.endpoint.startswith('transactions.') %}active{% endif %}" href="{{ url_for('transactions.list_transactions') }}"><i class="bi bi-arrow-left-right"></i><span>Transactions</span></a>
+        <a class="side-link {% if request.endpoint == 'analytics.daily_summary_page' %}active{% endif %}" href="{{ url_for('analytics.daily_summary_page') }}"><i class="bi bi-bar-chart-line"></i><span>Daily summary</span></a>
+        <a class="side-link {% if request.endpoint == 'analytics.assistant' %}active{% endif %}" href="{{ url_for('analytics.assistant') }}"><i class="bi bi-stars"></i><span>Business assistant</span></a>
+        <a class="side-link {% if request.endpoint == 'business_tools.ledger' %}active{% endif %}" href="{{ url_for('business_tools.ledger') }}"><i class="bi bi-journal-text"></i><span>Unified ledger</span></a>
+        <a class="side-link {% if request.endpoint == 'analytics.upi_import' %}active{% endif %}" href="{{ url_for('analytics.upi_import') }}"><i class="bi bi-file-earmark-spreadsheet"></i><span>Statement reconciliation</span></a>
         <a class="side-link {% if request.endpoint and request.endpoint.startswith('khata.') %}active{% endif %}" href="{{ url_for('khata.ledger') }}"><i class="bi bi-journal-bookmark"></i><span>Khata ledger</span></a>
         <a class="side-link {% if request.endpoint and request.endpoint.startswith('invoices.') %}active{% endif %}" href="{{ url_for('invoices.bills_list') }}"><i class="bi bi-receipt"></i><span>Bills & invoices</span></a>
         <a class="side-link {% if request.endpoint == 'invoices.receivables_list' %}active{% endif %}" href="{{ url_for('invoices.receivables_list') }}"><i class="bi bi-arrow-down-left-circle"></i><span>Receivables</span></a>
         <a class="side-link {% if request.endpoint == 'invoices.payables_list' %}active{% endif %}" href="{{ url_for('invoices.payables_list') }}"><i class="bi bi-arrow-up-right-circle"></i><span>Bills to pay</span></a>
         <a class="side-link {% if request.endpoint and request.endpoint.startswith('parties.customers') %}active{% endif %}" href="{{ url_for('parties.customers_list') }}"><i class="bi bi-people"></i><span>Customers</span></a>
         <a class="side-link {% if request.endpoint and request.endpoint.startswith('parties.suppliers') %}active{% endif %}" href="{{ url_for('parties.suppliers_list') }}"><i class="bi bi-box-seam"></i><span>Suppliers</span></a>
-        <span class="nav-caption nav-caption-spaced">PLAN AHEAD</span>
+        <span class="nav-caption nav-caption-spaced">INVENTORY</span>
+        <a class="side-link {% if request.endpoint in ('inventory.product_list','inventory.product_new','inventory.product_edit','inventory.product_detail') %}active{% endif %}" href="{{ url_for('inventory.product_list') }}"><i class="bi bi-boxes"></i><span>Products &amp; stock</span></a>
+        <a class="side-link {% if request.endpoint == 'inventory.alerts' %}active{% endif %}" href="{{ url_for('inventory.alerts') }}"><i class="bi bi-exclamation-triangle"></i><span>Stock alerts</span></a>
+        <a class="side-link {% if request.endpoint == 'inventory.expiry' %}active{% endif %}" href="{{ url_for('inventory.expiry') }}"><i class="bi bi-hourglass-split"></i><span>Expiry monitor</span></a>
+        <span class="nav-caption nav-caption-spaced">RECOVERY &amp; COMPLIANCE</span>
+        <a class="side-link {% if request.endpoint == 'business_tools.khata_prioritizer' %}active{% endif %}" href="{{ url_for('business_tools.khata_prioritizer') }}"><i class="bi bi-sort-down"></i><span>Khata recovery</span></a>
+        <a class="side-link {% if request.endpoint == 'business_tools.gst_tracker' %}active{% endif %}" href="{{ url_for('business_tools.gst_tracker') }}"><i class="bi bi-file-earmark-check"></i><span>GST tracker</span></a>
+        <span class="nav-caption nav-caption-spaced">FORECAST &amp; REMINDERS</span>
         <a class="side-link {% if request.endpoint == 'finance.forecast_page' %}active{% endif %}" href="{{ url_for('finance.forecast_page') }}"><i class="bi bi-activity"></i><span>Cash forecast</span></a>
         <a class="side-link {% if request.endpoint == 'calendar.cash_calendar' %}active{% endif %}" href="{{ url_for('calendar.cash_calendar') }}"><i class="bi bi-calendar3"></i><span>Cash-flow calendar</span></a>
         <a class="side-link {% if request.endpoint == 'finance.scenarios' %}active{% endif %}" href="{{ url_for('finance.scenarios') }}"><i class="bi bi-sliders"></i><span>What-if scenarios</span></a>
-        <a class="side-link {% if request.endpoint and request.endpoint.startswith('recurring.') %}active{% endif %}" href="{{ url_for('recurring.list_recurring') }}"><i class="bi bi-arrow-repeat"></i><span>Recurring expenses</span></a>
+        <a class="side-link {% if request.endpoint and request.endpoint.startswith('recurring.') %}active{% endif %}" href="{{ url_for('recurring.list_recurring') }}"><i class="bi bi-arrow-repeat"></i><span>Smart reminders</span></a>
         <a class="side-link {% if request.endpoint == 'finance.notifications_page' %}active{% endif %}" href="{{ url_for('finance.notifications_page') }}"><i class="bi bi-bell"></i><span>Notifications</span>{% if unread_notification_count %}<span class="nav-count">{{ unread_notification_count }}</span>{% endif %}</a>
       </nav>
       <div class="sidebar-bottom">

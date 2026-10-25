@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Expiry monitor — Artha Sutra{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> INVENTORY</div><h1>Expiry monitor</h1><p>Batches with stock that expire within 30 days or have already expired. Alert windows are fixed at 30, 14, 7, 3 and 0 days for now.</p></div></div>
+<p class="mb-3">Stock value at risk (at purchase cost): <strong>{{ total_risk|money }}</strong></p>
+<section class="table-shell"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Product / batch</th><th>Expiry</th><th class="text-end">Quantity</th><th class="text-end">Value at risk</th><th>Supplier</th><th>Suggested action</th></tr></thead><tbody>
+{% for i in items %}<tr>
+<td><a href="{{ url_for('inventory.product_detail', product_id=i.product.id) }}"><strong>{{ i.product.name }}</strong></a><div class="table-muted">Batch {{ i.batch.batch_number }}</div></td>
+<td>{{ i.batch.expiry_date.isoformat() }}<div>{% if i.bucket in ('expired','today') %}<span class="badge text-bg-danger">{{ i.label }}</span>{% else %}<span class="badge text-bg-warning">{{ i.label }}</span>{% endif %}</div></td>
+<td class="text-end">{{ i.quantity }} {{ i.product.unit }}</td><td class="text-end">{{ i.value_at_risk_paise|money }}</td>
+<td>{{ i.product.supplier.name if i.product.supplier else '—' }}</td><td class="small">{{ i.action }}</td></tr>
+{% else %}<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon"><i class="bi bi-check2-circle"></i></div><h3>Nothing expiring soon</h3><p>Only products marked as having an expiry date, with an entered expiry on each batch, appear here.</p></div></td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

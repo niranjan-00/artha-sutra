@@ -1,3 +1,4 @@
+
 import os
 from datetime import date
 from pathlib import Path
@@ -15,101 +16,62 @@ def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
 
     # Create the instance and upload directories.
-    Path(app.instance_path).mkdir(parents=True, exist_ok=True)
-    Path(app.instance_path, "uploads").mkdir(parents=True, exist_ok=True)
+    instance_path = Path(app.instance_path)
+    instance_path.mkdir(parents=True, exist_ok=True)
+
+    upload_path = instance_path / "uploads"
+    upload_path.mkdir(parents=True, exist_ok=True)
 
     from config import Config
 
     app.config.from_object(Config)
 
-    # Database configuration.
-    #
-    # Priority:
-    # 1. Explicit test configuration.
-    # 2. Turso when both Turso environment variables are present.
-    # 3. DATABASE_URL when provided.
-    # 4. Local SQLite as the default.
 
-    turso_url = os.environ.get("TURSO_DATABASE_URL")
-    turso_token = os.environ.get("TURSO_AUTH_TOKEN")
-    database_url = os.environ.get("DATABASE_URL")
+    # ---------------------------------------------------------
+    # DATABASE CONFIGURATION — LOCAL SQLITE
+    # ---------------------------------------------------------
 
-    if test_config and "SQLALCHEMY_DATABASE_URI" in test_config:
-        # Preserve the database configuration supplied by tests.
-        pass
+    # Use a local SQLite database for development.
+    # This bypasses Turso and DATABASE_URL configuration.
 
-    elif turso_url or turso_token:
-        if not turso_url or not turso_token:
-            raise RuntimeError(
-                "Both TURSO_DATABASE_URL and TURSO_AUTH_TOKEN "
-                "must be configured."
-            )
-
-        # Accept URLs such as:
-        # libsql://database-name-org.turso.io
-        # https://database-name-org.turso.io
-
-        parsed_url = urlparse(
-            turso_url if "://" in turso_url else f"libsql://{turso_url}"
-        )
-
-        turso_host = parsed_url.netloc
-
-        if not turso_host or parsed_url.scheme not in ("libsql", "https"):
-            raise RuntimeError(
-                "TURSO_DATABASE_URL must be a valid libsql:// or https:// URL."
-            )
-
-        app.config["SQLALCHEMY_DATABASE_URI"] = (
-            f"sqlite+libsql://{turso_host}?secure=true"
-        )
-
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "connect_args": {
-                "auth_token": turso_token,
-            }
-        }
-
-    elif database_url:
-        # Support standard database URLs.
-        #
-        # Some providers return postgres:// URLs. Normalize those
-        # to the SQLAlchemy PostgreSQL URL scheme.
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace(
-                "postgres://",
-                "postgresql://",
-                1,
-            )
-
-        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-
-    else:
-        # Local Windows development uses SQLite.
-        database_path = Path(
-            app.instance_path,
-            "arthasutra.sqlite3",
-        ).as_posix()
-
-        app.config["SQLALCHEMY_DATABASE_URI"] = (
-            f"sqlite:///{database_path}"
-        )
-
-    # Configure uploaded files.
-    app.config["UPLOAD_FOLDER"] = (
-        os.environ.get("UPLOAD_FOLDER")
-        or str(Path(app.instance_path, "uploads"))
+    database_path = Path(
+        app.instance_path,
+        "arthasutra.sqlite3",
     )
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = (
+        f"sqlite:///{database_path.as_posix()}"
+    )
+
+    # Remove inherited Turso-specific connection options.
+    app.config.pop("SQLALCHEMY_ENGINE_OPTIONS", None)
+
+
+    # ---------------------------------------------------------
+    # APPLY TEST CONFIGURATION
+    # ---------------------------------------------------------
 
     if test_config:
         app.config.update(test_config)
+
+    # ---------------------------------------------------------
+    # UPLOAD CONFIGURATION
+    # ---------------------------------------------------------
+
+    app.config["UPLOAD_FOLDER"] = (
+        os.environ.get("UPLOAD_FOLDER")
+        or str(upload_path)
+    )
 
     Path(app.config["UPLOAD_FOLDER"]).mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    # Initialize Flask extensions.
+    # ---------------------------------------------------------
+    # INITIALIZE FLASK EXTENSIONS
+    # ---------------------------------------------------------
+
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
@@ -122,7 +84,10 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     csrf.init_app(app)
 
-    # Import and register application routes.
+    # ---------------------------------------------------------
+    # REGISTER APPLICATION ROUTES
+    # ---------------------------------------------------------
+
     from app.routes.auth import bp as auth_bp
     from app.routes.main import bp as main_bp
     from app.routes.transactions import bp as transactions_bp
@@ -132,6 +97,9 @@ def create_app(test_config: dict | None = None) -> Flask:
     from app.routes.recurring import bp as recurring_bp
     from app.routes.calendar import bp as calendar_bp
     from app.routes.khata import bp as khata_bp
+    from app.routes.inventory import bp as inventory_bp
+    from app.routes.analytics import bp as analytics_bp
+    from app.routes.business_tools import bp as business_tools_bp
 
     blueprints = (
         auth_bp,
@@ -143,12 +111,18 @@ def create_app(test_config: dict | None = None) -> Flask:
         recurring_bp,
         calendar_bp,
         khata_bp,
+        inventory_bp,
+        analytics_bp,
+        business_tools_bp,
     )
 
     for blueprint in blueprints:
         app.register_blueprint(blueprint)
 
-    # Public route manifest.
+    # ---------------------------------------------------------
+    # PUBLIC ROUTE MANIFEST
+    # ---------------------------------------------------------
+
     @app.get("/manus-routes.json")
     def route_manifest():
         return send_from_directory(
@@ -157,7 +131,10 @@ def create_app(test_config: dict | None = None) -> Flask:
             mimetype="application/json",
         )
 
-    # Flask-Login user loader.
+    # ---------------------------------------------------------
+    # FLASK-LOGIN USER LOADER
+    # ---------------------------------------------------------
+
     @login_manager.user_loader
     def load_user(user_id: str):
         try:
@@ -165,12 +142,18 @@ def create_app(test_config: dict | None = None) -> Flask:
         except (TypeError, ValueError):
             return None
 
-    # Currency formatting filter.
+    # ---------------------------------------------------------
+    # CURRENCY FORMATTING FILTER
+    # ---------------------------------------------------------
+
     @app.template_filter("money")
     def money_filter(amount_paise, currency="INR"):
         return format_inr(amount_paise, currency)
 
-    # Shared template context.
+    # ---------------------------------------------------------
+    # SHARED TEMPLATE CONTEXT
+    # ---------------------------------------------------------
+
     @app.context_processor
     def inject_shell_data():
         unread = 0
@@ -186,17 +169,22 @@ def create_app(test_config: dict | None = None) -> Flask:
             "today_iso": date.today().isoformat(),
         }
 
-    # Default security headers.
+    # ---------------------------------------------------------
+    # SECURITY HEADERS
+    # ---------------------------------------------------------
+
     @app.after_request
     def protect_responses(response):
         response.headers.setdefault(
             "X-Content-Type-Options",
             "nosniff",
         )
+
         response.headers.setdefault(
             "Referrer-Policy",
             "strict-origin-when-cross-origin",
         )
+
         response.headers.setdefault(
             "Cache-Control",
             "no-store",
@@ -204,7 +192,10 @@ def create_app(test_config: dict | None = None) -> Flask:
 
         return response
 
-    # Error handlers.
+    # ---------------------------------------------------------
+    # ERROR HANDLERS
+    # ---------------------------------------------------------
+
     @app.errorhandler(404)
     def not_found(_error):
         return (

@@ -12,6 +12,12 @@ A Flask cash-flow management MVP for Indian small businesses. The fresh project 
 - Profile name/email and business details are editable in settings. Light/dark preference is stored per account; a toolbar toggle changes the persisted setting.
 - What-if adjustments are calculated in memory and do not update actual records. A clearly labeled fictional grocery demo is available at `/demo` and can be reset from its dashboard. The sample workspace is shared among demo visitors (but isolated from real accounts); do not enter personal or sensitive details. Private file uploads are disabled in the shared demo.
 - Money is stored as integer paise; rupee values are parsed through `Decimal`. OCR suggestions are browser-side only; bank/UPI synchronization, external payment settlement, SMS/email and AI-generated financial predictions are not provided.
+- Daily business summary is available at `/daily-summary` with date presets/custom ranges, revenue versus collections, payment-method breakdown, product sales, outstanding credit, estimated profit disclosure, CSV export, and PDF export.
+- The owner-controlled business assistant is available at `/assistant`; recommendations are deterministic explanations of actual ledger, invoice, Khata, and inventory records and do not mutate records or create purchases.
+- UPI reconciliation is available at `/upi-import` for CSV preview, manual review, duplicate-reference checks, and explicit confirmation. Imported credits are ledger entries and are never silently treated as new sales.
+- Related capabilities are grouped into canonical workflows: Reports & Summary (`/daily-summary`), Ledger & Reconciliation (`/ledger` and `/upi-import`), Forecast & Simulator (`/forecast` and `/scenarios`), Smart Reminders (`/reminders` and recurring expenses), Khata Recovery (`/khata/prioritizer`), and GST Tracker (`/gst`). Existing URLs remain available for compatibility.
+- Settled ledger transactions now have generic PDF receipt/voucher generation and a share page with download, print, device share, WhatsApp, Telegram, and email draft actions. External delivery is never claimed without a configured provider response.
+- GST records and deadlines are owner-entered with an explicit verification disclaimer; no government deadline or penalty is invented. User preferences now persist theme and language choices (English, Kannada, Hindi, Marathi) for the multilingual UI rollout.
 
 ## Requirements
 
@@ -90,3 +96,10 @@ public/         /manus-routes.json
 instance/       local SQLite database and private uploads (ignored by Git)
 tests/          isolated pytest workflows
 ```
+
+## Inventory (phase 1)
+
+- `/inventory` products and stock, `/inventory/alerts` low-stock alerts, `/inventory/expiry` expiry monitor. Apply the new migration with `flask --app run.py db upgrade`.
+- Stock is the sum of `stock_movements`; there is no stored stock total. Receiving or adjusting stock records quantity only and does not create a payment or expense.
+- Stockout predictions use recorded `sale` movements and are withheld until there are 7 days of history and 3 selling days. Sales entry that writes sale movements is a later phase, so predictions stay empty until then.
+- Alerts are created once per condition and level, can be acknowledged, and also appear in Notifications. Email and WhatsApp delivery are not implemented. Expiry alert windows are fixed (30/14/7/3/0 days); making them configurable is pending.

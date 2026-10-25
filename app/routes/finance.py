@@ -225,6 +225,7 @@ def settings():
             profile_name = request.form.get("profile_name", "").strip()
             profile_email = request.form.get("profile_email", "").strip().lower()
             theme = request.form.get("theme", current_user.theme).strip().lower()
+            language = request.form.get("language", current_user.language).strip().lower()
             if not name or len(name) > 160 or not city or not state or len(address) > 300:
                 raise ValueError("Enter a valid business name, city, state and address.")
             if kind not in BUSINESS_TYPES:
@@ -237,6 +238,8 @@ def settings():
                 raise ValueError("Enter a valid profile name and email address.")
             if theme not in {"light", "dark"}:
                 raise ValueError("Choose either light or dark appearance.")
+            if language not in {"en", "kn", "hi", "mr"}:
+                raise ValueError("Choose a supported language preference.")
             duplicate = User.query.filter(User.email == profile_email, User.id != current_user.id).first()
             if duplicate:
                 raise ValueError("That email address is already used by another account.")
@@ -252,6 +255,7 @@ def settings():
             current_user.name = profile_name
             current_user.email = profile_email
             current_user.theme = theme
+            current_user.language = language
             db.session.commit()
             flash("Settings saved. Historical transaction records were not rewritten.", "success")
             return redirect(url_for("finance.settings"))
