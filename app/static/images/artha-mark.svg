@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Artha Sutra mark</title>
+  <rect x="3" y="3" width="90" height="90" rx="28" fill="#66539c"/>
+  <path d="M25 67V43c0-13 8-21 22-21h24" fill="none" stroke="#f6f2ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M25 43h29c11 0 17 6 17 17v8" fill="none" stroke="#cfc3ee" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="71" cy="68" r="7" fill="#a5c5a9"/>
+</svg>

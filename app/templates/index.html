@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Artha Sutra — Your money, ahead of time{% endblock %}
+{% block public_content %}
+<section class="hero-section">
+  <div class="hero-copy">
+    <div class="eyebrow"><span class="eyebrow-line"></span> A calmer way to plan business cash</div>
+    <h1>Your money,<br><em>ahead of time.</em></h1>
+    <p class="hero-lede">Know what’s coming in, what needs to go out, and when your cash needs attention. Artha Sutra is built for the daily rhythm of India’s small businesses.</p>
+    <div class="hero-actions"><a class="btn btn-ink btn-lg" href="{{ url_for('auth.register') }}">Set up your business <i class="bi bi-arrow-right"></i></a><a class="text-link" href="{{ url_for('main.how_it_works') }}">See how it works <i class="bi bi-arrow-up-right"></i></a></div>
+    <div class="hero-note"><i class="bi bi-shield-check"></i> Your records stay private to your business.</div>
+  </div>
+  <div class="hero-visual" aria-label="Cash-flow planning preview">
+    <div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
+    <div class="forecast-preview">
+      <div class="preview-top"><div><span class="preview-kicker">CASH FLOW · NEXT 30 DAYS</span><strong>See the shape of your month</strong></div><span class="preview-icon"><i class="bi bi-graph-up-arrow"></i></span></div>
+      <div class="preview-chart"><div class="preview-y-labels"><span>Cash</span><span>Reserve</span><span>Now</span></div><svg viewBox="0 0 430 175" role="img" aria-label="Illustrative cash flow line rising above a reserve line"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7260ae" stop-opacity=".16"/><stop offset="1" stop-color="#7260ae" stop-opacity="0"/></linearGradient></defs><path d="M8 55 C48 62 59 90 97 77 S145 49 177 74 S226 124 256 107 S298 66 333 73 S385 44 420 31 L420 155 L8 155 Z" fill="url(#area)"/><path d="M8 118 C93 118 175 118 256 118 S344 118 420 118" fill="none" stroke="#d8d2e5" stroke-dasharray="4 5"/><path d="M8 55 C48 62 59 90 97 77 S145 49 177 74 S226 124 256 107 S298 66 333 73 S385 44 420 31" fill="none" stroke="#65539d" stroke-width="3" stroke-linecap="round"/><circle cx="256" cy="107" r="6" fill="#fff" stroke="#c28236" stroke-width="3"/><circle cx="420" cy="31" r="4" fill="#65539d"/></svg></div>
+      <div class="preview-legend"><span><i class="legend-dot violet"></i>Projected cash</span><span><i class="legend-dash"></i>Minimum reserve</span><span class="preview-caption">Illustrative view</span></div>
+    </div>
+    <div class="floating-note note-top"><span class="note-mark amber"><i class="bi bi-exclamation"></i></span><span><strong>See a squeeze coming</strong><small>Before it becomes a surprise</small></span></div>
+    <div class="floating-note note-bottom"><span class="note-mark green"><i class="bi bi-check2"></i></span><span><strong>One next step</strong><small>Clear reason. Practical action.</small></span></div>
+    <div class="hero-stamp">artha<br><span>अर्थ</span></div>
+  </div>
+</section>
+<section class="public-band"><div class="band-label">A useful view for the work you do</div><div class="band-items"><span>Retail & grocery</span><span>Small wholesalers</span><span>Restaurants & cafés</span><span>Local services</span></div></section>
+<section class="landing-steps"><div class="section-heading"><div class="eyebrow"><span class="eyebrow-line"></span> LESS GUESSWORK, MORE CONTEXT</div><h2>Cash decisions, made clearer.</h2><p>A simple loop: capture what happened, see what’s scheduled, choose your next move.</p></div><div class="step-row"><article class="step-card"><span class="step-number">01</span><i class="bi bi-journal-plus"></i><h3>Keep a clear record</h3><p>Log money received and spent. Track what customers owe and what suppliers expect.</p></article><article class="step-card"><span class="step-number">02</span><i class="bi bi-calendar3"></i><h3>Look around the corner</h3><p>See a date-by-date estimate built from your recorded cash, bills and expected receipts.</p></article><article class="step-card"><span class="step-number">03</span><i class="bi bi-signpost-split"></i><h3>Consider a next step</h3><p>Understand what’s behind a tight week, then compare a possible adjustment before you act.</p></article></div></section>
+<section class="demo-cta"><div><span class="eyebrow"><span class="eyebrow-line"></span> WANT TO LOOK AROUND FIRST?</span><h2>Try a fictional grocery business.</h2><p>Explore labeled sample records and reset the demo any time. Demo entries are separate from personal accounts.</p></div><a class="btn btn-light-outline" href="{{ url_for('main.demo_entry') }}">Explore the demo <i class="bi bi-arrow-up-right"></i></a></section>
+{% endblock %}
